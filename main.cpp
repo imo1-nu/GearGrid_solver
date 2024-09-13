@@ -1,13 +1,16 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+using ll = long long;
+
 #define CANT 0 // 進めない
 #define CW 1 // 時計回り
 #define CCW 2 // 反時計回り
 
 // 回転壁の構造体
 struct kaiten_kabe {
-    int x, y, shape; // 回転壁の位置と形状
+    int x, y; // 回転壁の位置
+    ll shape; // 回転壁の形状
     int M; // 同期している回転壁の数
     vector<int> D; // 同期している回転壁のインデックス
     kaiten_kabe(int x, int y, const string& shape_str, int M, vector<int> D) : x(x), y(y) , M(M), D(D) {
@@ -104,9 +107,10 @@ void bfs(int sx, int sy, int gx, int gy, vector<vector<string>> &grids, vector<k
 }
 
 // 8桁8進数の回転を行う関数
-int rotl8(int x, int shift) {
-    int max = Pow8[8];
-    return (x * Pow8[shift] | (x / Pow8[8 - shift])) % max; // 左シフトと右シフトを組み合わせて回転
+int rotl8(ll x, int shift) {
+    ll max = Pow8[8];
+    shift *= 3; // 8進数なので3ビットずつ回転
+    return (x << shift | (x >> (24 - shift))) % max; // 左シフトと右シフトを組み合わせて回転
 }
 
 // 回転壁を配置する関数

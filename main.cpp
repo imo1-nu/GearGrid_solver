@@ -33,7 +33,7 @@ bool can_move(ll x, ll y, ll H, ll W) {
 }
 
 // keyのk番目の状態を取得する関数
-ll get_kth_state(ll key, ll k, ll N) {
+ll get_kth_state(ll key, ll k) {
     return (key / Pow8[k]) % 8;
 }
 
@@ -50,10 +50,10 @@ ll can_rotate(ll x, ll y, ll dir, vector<string> &grid, vector<kaiten_kabe> &kai
 }
 
 // 次の状態のkeyを計算する関数
-ll next_key(ll key, ll k, ll rot, ll N, vector<kaiten_kabe> &kaiten) {
+ll next_key(ll key, ll k, ll rot, vector<kaiten_kabe> &kaiten) {
     ll nkey = key;
     for (auto d : kaiten[k].D) {
-        ll d_state = get_kth_state(key, d, N); // 同期している回転壁の状態を取得
+        ll d_state = get_kth_state(key, d); // 同期している回転壁の状態を取得
         ll nd_state;
         if (rot == CW) {
             nd_state = (d_state + 7) % 8; // 時計回りに回転
@@ -93,7 +93,7 @@ void bfs(ll sx, ll sy, ll gx, ll gy, map<ll, vector<string>> &grids, vector<kait
 
                 if (rot == CANT) continue; // 回転できない場合はスキップ
 
-                nkey = next_key(key, k, rot, N, kaiten); // 次の状態のkeyを計算
+                nkey = next_key(key, k, rot, kaiten); // 次の状態のkeyを計算
                 if (valid_states.find(nkey) == valid_states.end()) continue; // 無効なkeyの場合はスキップ
             }
             
@@ -118,7 +118,7 @@ void put_kaiten_kabe(ll key, map<ll, vector<string>> &grids, vector<kaiten_kabe>
     ll N = kaiten.size();
 
     for (ll k = 0; k < N; k++) {
-        ll state = get_kth_state(key, k, N); // 現在の状態を取得
+        ll state = get_kth_state(key, k); // 現在の状態を取得
         kaiten_kabe kk = kaiten[k];
         ll x = kk.x;
         ll y = kk.y;

@@ -24,6 +24,8 @@ vector<int> dy = {0, 1, 1, 1, 0, -1, -1, -1};
 // 8の累乗
 vector<int> Pow8 = {1, 8, 64, 512, 4096, 32768, 262144, 2097152, 16777216};
 
+int H, W; // グリッドの高さと幅
+
 // 座標が範囲内かどうかをチェックする関数
 bool can_move(int x, int y, int H, int W) {
     if (0 <= x && x < H && 0 <= y && y < W) return true;
@@ -65,9 +67,7 @@ int next_key(int key, int k, int rot, int N, vector<kaiten_kabe> &kaiten) {
 }
 
 // 幅優先探索を行う関数
-void bfs(int sx, int sy, int gx, int gy, vector<vector<string>> &grids, vector<kaiten_kabe> &kaiten, vector<bool> &is_valid, vector<vector<vector<int>>> &dist, vector<vector<vector<tuple<int, int, int>>>> &par) {
-    int H = grids[0].size();
-    int W = grids[0][0].size();
+void bfs(int sx, int sy, int gx, int gy, map<int, vector<string>> &grids, vector<kaiten_kabe> &kaiten, set<int> valid_states, map<int, vector<vector<int>>> &dist, map<int, vector<vector<tuple<int, int, int>>>> &par) {
     int N = kaiten.size();
     queue<tuple<int, int, int>> q; // キューを初期化
     q.push(make_tuple(sx, sy, 0)); // スタート地点をキューに追加
@@ -94,7 +94,7 @@ void bfs(int sx, int sy, int gx, int gy, vector<vector<string>> &grids, vector<k
                 if (rot == CANT) continue; // 回転できない場合はスキップ
 
                 nkey = next_key(key, k, rot, N, kaiten); // 次の状態のkeyを計算
-                if (!is_valid[nkey]) continue; // 無効なkeyの場合はスキップ
+                if (valid_states.find(nkey) == valid_states.end()) continue; // 無効なkeyの場合はスキップ
             }
             
             if (dist[nkey][nx][ny] == -1) { // 移動先が空白の場合
@@ -114,9 +114,7 @@ int rotl8(ll x, int shift) {
 }
 
 // 回転壁を配置する関数
-void put_kaiten_kabe(int key, vector<string> &grid, vector<kaiten_kabe> &kaiten, vector<bool> &is_valid) {
-    int H = grid.size();
-    int W = grid[0].size();
+void put_kaiten_kabe(int key, map<int, vector<string>> &grids, vector<kaiten_kabe> &kaiten, set<int> &valid_states, vector<string> S) {
     int N = kaiten.size();
 
     for (int k = 0; k < N; k++) {
@@ -126,46 +124,43 @@ void put_kaiten_kabe(int key, vector<string> &grid, vector<kaiten_kabe> &kaiten,
         int y = kk.y;
         int shape = rotl8(kk.shape, state); // 回転後の形状を計算
 
-        if (grid[x][y] != '.') { // 回転壁の位置に既に回転壁や壁がある場合
-            is_valid[key] = false; // 無効なkeyを記録
+        if (S[x][y] != '.') { // 回転壁の位置に既に回転壁や壁がある場合
             return;
         }
-        grid[x][y] = '*'; // 回転壁の位置を設定
+        S[x][y] = '*'; // 回転壁の位置を設定
         for (int i = 0; i < 8; i++) {
             int cnt = shape / Pow8[i] % 8; // 回転壁の長さを取得
             for (int j = 0; j < cnt; j++) {
                 int nx = x + dx[i] * (j + 1);
                 int ny = y + dy[i] * (j + 1);
-                if (can_move(nx, ny, H, W) && grid[nx][ny] == '.') {
-                    grid[nx][ny] = k + '0';
+                if (can_move(nx, ny, H, W) && S[nx][ny] == '.') {
+                    S[nx][ny] = k + '0';
                 }
                 else {
-                    is_valid[key] = false; // 無効なkeyを記録
                     return;
                 }
             }
         }
     }
+    valid_states.insert(key); // 有効な状態の集合に追加
+    grids[key] = S; // グリッドを設定
 }
 
 // 全ての状態のグリッドを作成する関数
-void make_grids(vector<vector<string>> &grids, vector<kaiten_kabe> &kaiten, vector<bool> &is_valid) {
-    int state_num = grids.size();
+void make_grids(map<int, vector<string>> &grids, vector<kaiten_kabe> &kaiten, set<int> valid_states, int state_num, vector<string> &S) {
     for (int key = 0; key < state_num; key++) {
-        put_kaiten_kabe(key, grids[key], kaiten, is_valid); // 各状態に対して回転壁を配置
+        put_kaiten_kabe(key, grids, kaiten, valid_states, S); // 各状態に対して回転壁を配置
     }
 }
 
 // 結果を出力する関数
-void cout_result(int gx, int gy, vector<vector<string>> &grids, vector<vector<vector<int>>> &dist, vector<vector<vector<tuple<int, int, int>>>> &par) {
+void cout_result(int gx, int gy, map<int, vector<string>> &grids, map<int, vector<vector<int>>> &dist, map<int, vector<vector<tuple<int, int, int>>>> &par) {
     int ans = -1;
     int goal_key = -1;
-    int state_num = grids.size();
-    int H = grids[0].size();
-    for (int key = 0; key < state_num; key++) {
-        if (dist[key][gx][gy] != -1) { // ゴールに到達した場合
-            ans = dist[key][gx][gy];
-            goal_key = key;
+    for (auto key : dist) {
+        if (dist[key.first][gy][gy] != -1) { // ゴールに到達した場合
+            ans = dist[key.first][gx][gy];
+            goal_key = key.first;
             break;
         }
     }
@@ -199,7 +194,6 @@ void cout_result(int gx, int gy, vector<vector<string>> &grids, vector<vector<ve
 
 // メイン関数
 int main() {
-    int H, W;
     cin >> H >> W; // グリッドの高さと幅を入力
     int sx, sy, gx, gy;
     cin >> sx >> sy >> gx >> gy; // スタートとゴールの座標を入力
@@ -225,12 +219,19 @@ int main() {
     }
 
     int state_num = Pow8[N]; // 状態の数を計算
-    vector<bool> is_valid(state_num, true); // 有効なkeyかどうかを記録する配列
-    vector<vector<string>> grids(state_num, S); // 全ての状態のグリッドを初期化
-    make_grids(grids, kaiten, is_valid); // 全ての状態のグリッドを作成
-    vector<vector<vector<int>>> dist(state_num, vector<vector<int>>(H, vector<int>(W, -1))); // 距離を初期化
-    vector<vector<vector<tuple<int, int, int>>>> par(state_num, vector<vector<tuple<int, int, int>>>(H, vector<tuple<int, int, int>>(W, make_tuple(-1, -1, -1)))); // 親ノードを初期化
-    bfs(sx, sy, gx, gy, grids, kaiten, is_valid, dist, par); // 幅優先探索を実行
+    set<int> valid_states; // 有効な状態の集合
+    map<int, vector<string>> grids; // 全ての状態のグリッドを初期化
+    make_grids(grids, kaiten, valid_states, state_num, S); // 全ての状態のグリッドを作成
+    map<int, vector<vector<int>>> dist; // 距離を初期化
+    for (auto key : valid_states) {
+        dist[key] = vector<vector<int>>(H, vector<int>(W, -1)); // 距離を初期化
+    }
+    
+    map<int, vector<vector<tuple<int, int, int>>>> par; // 親ノードを初期化
+    for (auto key : valid_states) {
+        par[key] = vector<vector<tuple<int, int, int>>>(H, vector<tuple<int, int, int>>(W, make_tuple(-1, -1, -1))); // 親ノードを初期化
+    }
+    bfs(sx, sy, gx, gy, grids, kaiten, valid_states, dist, par); // 幅優先探索を実行
 
     cout_result(gx, gy, grids, dist, par); // 結果を出力
 }

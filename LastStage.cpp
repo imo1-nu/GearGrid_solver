@@ -22,12 +22,12 @@ struct kaiten_kabe {
 vector<ll> dx = {1, 1, 0, -1, -1, -1, 0, 1};
 vector<ll> dy = {0, 1, 1, 1, 0, -1, -1, -1};
 // 8の累乗
-vector<ll> Pow8 = {1, 8, 64, 512, 4096, 32768, 262144, 2097152, 16777216, 134217728};
+vector<ll> Pow8;
 
 ll H, W; // グリッドの高さと幅
 
 // 座標が範囲内かどうかをチェックする関数
-bool can_move(ll x, ll y, ll H, ll W) {
+bool can_move(ll x, ll y) {
     if (0 <= x && x < H && 0 <= y && y < W) return true;
     return false;
 }
@@ -68,7 +68,7 @@ ll next_key(ll key, ll k, ll rot, vector<kaiten_kabe> &kaiten) {
 
 // 幅優先探索を行う関数
 void bfs(ll sx, ll sy, ll gx, ll gy, map<ll, vector<string>> &grids, vector<kaiten_kabe> &kaiten, set<ll> &valid_states, map<ll, vector<vector<ll>>> &dist, map<ll, vector<vector<tuple<ll, ll, ll>>>> &par, vector<string> &ice) {
-    ll N = kaiten.size();
+    ll N = (ll)kaiten.size();
     queue<tuple<ll, ll, ll>> q; // キューを初期化
     q.push(make_tuple(sx, sy, 0)); // スタート地点をキューに追加
     dist[0][sx][sy] = 0; // スタート地点の距離を0に設定
@@ -82,7 +82,7 @@ void bfs(ll sx, ll sy, ll gx, ll gy, map<ll, vector<string>> &grids, vector<kait
             return;
         }
 
-        for (ll i = 0; i < 8; i += 2) { // 8方向に移動を試みる
+        for (ll i = 0; i < 8; i += 2) { // 4方向に移動を試みる
             ll nkey, nx, ny;
             ll key2 = key;
             ll x2 = x;
@@ -92,7 +92,7 @@ void bfs(ll sx, ll sy, ll gx, ll gy, map<ll, vector<string>> &grids, vector<kait
                 nkey = key2;
                 nx = x2 + dx[i];
                 ny = y2 + dy[i];
-                if (!can_move(nx, ny, H, W) || grids[key2][nx][ny] == '#' || grids[key2][nx][ny] == '*') {
+                if (!can_move(nx, ny) || grids[key2][nx][ny] == '#' || grids[key2][nx][ny] == '*') {
                     flag = false; // 移動先が範囲外または壁の場合はスキップ
                     break;
                 }
@@ -123,7 +123,6 @@ void bfs(ll sx, ll sy, ll gx, ll gy, map<ll, vector<string>> &grids, vector<kait
                 ny = y2; // nyにy2の値を代入
                 nkey = key2; // nkeyにkey2の値を代入
             }
-            
             if (dist[nkey][nx][ny] == -1) { // 移動先が空白の場合
                 dist[nkey][nx][ny] = dist[key][x][y] + 1; // 距離を更新
                 par[nkey][nx][ny] = make_tuple(key, x, y); // 親ノードを設定
@@ -137,12 +136,12 @@ void bfs(ll sx, ll sy, ll gx, ll gy, map<ll, vector<string>> &grids, vector<kait
 ll rotl8(ll x, ll shift) {
     ll max = Pow8[8];
     shift *= 3; // 8進数なので3ビットずつ回転
-    return (x << shift | (x >> (24 - shift))) % max; // 左シフトと右シフトを組み合わせて回転
+    return (x << shift | (x >> (ll(24) - shift))) % max; // 左シフトと右シフトを組み合わせて回転
 }
 
 // 回転壁を配置する関数
 void put_kaiten_kabe(ll key, map<ll, vector<string>> &grids, vector<kaiten_kabe> &kaiten, set<ll> &valid_states, vector<string> S) {
-    ll N = kaiten.size();
+    ll N = (ll)kaiten.size();
 
     for (ll k = 0; k < N; k++) {
         ll state = get_kth_state(key, k); // 現在の状態を取得
@@ -155,12 +154,12 @@ void put_kaiten_kabe(ll key, map<ll, vector<string>> &grids, vector<kaiten_kabe>
             return;
         }
         S[x][y] = '*'; // 回転壁の位置を設定
-        for (ll i = 0; i < 8; i++) {
+        for (ll i = 0; i < N; i++) {
             ll cnt = shape / Pow8[i] % 8; // 回転壁の長さを取得
             for (ll j = 0; j < cnt; j++) {
                 ll nx = x + dx[i] * (j + 1);
                 ll ny = y + dy[i] * (j + 1);
-                if (can_move(nx, ny, H, W) && S[nx][ny] == '.') {
+                if (can_move(nx, ny) && S[nx][ny] == '.') {
                     S[nx][ny] = k + '0';
                 }
                 else {
@@ -175,7 +174,7 @@ void put_kaiten_kabe(ll key, map<ll, vector<string>> &grids, vector<kaiten_kabe>
 }
 
 // 全ての状態のグリッドを作成する関数
-void make_grids(map<ll, vector<string>> &grids, vector<kaiten_kabe> &kaiten, set<ll> &valid_states, ll state_num, vector<string> &S) {
+void make_grids(map<ll, vector<string>> &grids, vector<kaiten_kabe> &kaiten, set<ll> &valid_states, vector<string> &S) {
     for (auto key : valid_states) {
         put_kaiten_kabe(key, grids, kaiten, valid_states, S); // 各状態に対して回転壁を配置
     }
@@ -251,7 +250,7 @@ int main() {
         cin >> ice[i]; // 氷のグリッドを入力
     }
 
-    vector<vector<ll>> valid_rot(N); // 有効な回転の組み合わせ
+    vector<vector<ll>> valid_rot(10); // 有効な回転の組み合わせ
     for (ll i = 0; i < N; i++) {
         ll cnt;
         cin >> cnt; // 有効な回転の数を入力
@@ -262,27 +261,40 @@ int main() {
         }
     }
 
+    for (ll i = N; i < 10; i++) {
+        valid_rot[i].push_back(0); // 回転壁がない場合は0を追加
+    }
+
+    Pow8.resize(11); // 8の累乗を計算
+    Pow8[0] = 1;
+    for (ll i = 1; i <= 10; i++) {
+        Pow8[i] = Pow8[i - 1] * 8;
+    }
+
     set<ll> valid_states; // 有効な状態の集合
-    for (ll i0 = 0; i0 < valid_rot[0].size(); i0++) {
-        for (ll i1 = 0; i1 < valid_rot[1].size(); i1++) {
-            for (ll i2 = 0; i2 < valid_rot[2].size(); i2++) {
-                for (ll i3 = 0; i3 < valid_rot[3].size(); i3++) {
-                    for (ll i4 = 0; i4 < valid_rot[4].size(); i4++) {
-                        for (ll i5 = 0; i5 < valid_rot[5].size(); i5++) {
-                            for (ll i6 = 0; i6 < valid_rot[6].size(); i6++) {
-                                for (ll i7 = 0; i7 < valid_rot[7].size(); i7++) {
-                                    for (ll i8 = 0; i8 < valid_rot[8].size(); i8++) {
-                                        ll key = 0;
-                                        key += valid_rot[0][i0];
-                                        key += valid_rot[1][i1] * Pow8[1];
-                                        key += valid_rot[2][i2] * Pow8[2];
-                                        key += valid_rot[3][i3] * Pow8[3];
-                                        key += valid_rot[4][i4] * Pow8[4];
-                                        key += valid_rot[5][i5] * Pow8[5];
-                                        key += valid_rot[6][i6] * Pow8[6];
-                                        key += valid_rot[7][i7] * Pow8[7];
-                                        key += valid_rot[8][i8] * Pow8[8];
-                                        valid_states.insert(key); // 有効な状態の集合に追加
+    for (ll i0 = 0; i0 < (int)valid_rot[0].size(); i0++) {
+        for (ll i1 = 0; i1 < (int)valid_rot[1].size(); i1++) {
+            for (ll i2 = 0; i2 < (int)valid_rot[2].size(); i2++) {
+                for (ll i3 = 0; i3 < (int)valid_rot[3].size(); i3++) {
+                    for (ll i4 = 0; i4 < (int)valid_rot[4].size(); i4++) {
+                        for (ll i5 = 0; i5 < (int)valid_rot[5].size(); i5++) {
+                            for (ll i6 = 0; i6 < (int)valid_rot[6].size(); i6++) {
+                                for (ll i7 = 0; i7 < (int)valid_rot[7].size(); i7++) {
+                                    for (ll i8 = 0; i8 < (int)valid_rot[8].size(); i8++) {
+                                        for (ll i9 = 0; i9 < (int)valid_rot[9].size(); i9++) {
+                                            ll key = 0;
+                                            key += valid_rot[0][i0];
+                                            key += valid_rot[1][i1] * Pow8[1];
+                                            key += valid_rot[2][i2] * Pow8[2];
+                                            key += valid_rot[3][i3] * Pow8[3];
+                                            key += valid_rot[4][i4] * Pow8[4];
+                                            key += valid_rot[5][i5] * Pow8[5];
+                                            key += valid_rot[6][i6] * Pow8[6];
+                                            key += valid_rot[7][i7] * Pow8[7];
+                                            key += valid_rot[8][i8] * Pow8[8];
+                                            key += valid_rot[9][i9] * Pow8[9];
+                                            valid_states.insert(key); // 有効な状態の集合に追加
+                                        }
                                     }
                                 }
                             }
@@ -293,9 +305,8 @@ int main() {
         }
     }
 
-    ll state_num = Pow8[N]; // 状態の数を計算
     map<ll, vector<string>> grids; // 全ての状態のグリッドを初期化
-    make_grids(grids, kaiten, valid_states, state_num, S); // 全ての状態のグリッドを作成
+    make_grids(grids, kaiten, valid_states, S); // 全ての状態のグリッドを作成
     map<ll, vector<vector<ll>>> dist; // 距離を初期化
     for (auto key : valid_states) {
         dist[key] = vector<vector<ll>>(H, vector<ll>(W, -1)); // 距離を初期化

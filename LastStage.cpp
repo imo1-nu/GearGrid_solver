@@ -250,7 +250,7 @@ int main() {
         cin >> ice[i]; // 氷のグリッドを入力
     }
 
-    vector<vector<ll>> valid_rot(10); // 有効な回転の組み合わせ
+    vector<vector<ll>> valid_rot(12); // 有効な回転の組み合わせ
     for (ll i = 0; i < N; i++) {
         ll cnt;
         cin >> cnt; // 有効な回転の数を入力
@@ -261,13 +261,13 @@ int main() {
         }
     }
 
-    for (ll i = N; i < 10; i++) {
+    for (ll i = N; i < 12; i++) {
         valid_rot[i].push_back(0); // 回転壁がない場合は0を追加
     }
 
-    Pow8.resize(11); // 8の累乗を計算
+    Pow8.resize(13); // 8の累乗を計算
     Pow8[0] = 1;
-    for (ll i = 1; i <= 10; i++) {
+    for (ll i = 1; i <= 12; i++) {
         Pow8[i] = Pow8[i - 1] * 8;
     }
 
@@ -282,18 +282,24 @@ int main() {
                                 for (ll i7 = 0; i7 < (int)valid_rot[7].size(); i7++) {
                                     for (ll i8 = 0; i8 < (int)valid_rot[8].size(); i8++) {
                                         for (ll i9 = 0; i9 < (int)valid_rot[9].size(); i9++) {
-                                            ll key = 0;
-                                            key += valid_rot[0][i0];
-                                            key += valid_rot[1][i1] * Pow8[1];
-                                            key += valid_rot[2][i2] * Pow8[2];
-                                            key += valid_rot[3][i3] * Pow8[3];
-                                            key += valid_rot[4][i4] * Pow8[4];
-                                            key += valid_rot[5][i5] * Pow8[5];
-                                            key += valid_rot[6][i6] * Pow8[6];
-                                            key += valid_rot[7][i7] * Pow8[7];
-                                            key += valid_rot[8][i8] * Pow8[8];
-                                            key += valid_rot[9][i9] * Pow8[9];
-                                            valid_states.insert(key); // 有効な状態の集合に追加
+                                            for (ll i10 = 0; i10 < (int)valid_rot[10].size(); i10++) {
+                                                for (ll i11 = 0; i11 < (int)valid_rot[11].size(); i11++) {
+                                                    ll key = 0;
+                                                    key += valid_rot[0][i0];
+                                                    key += valid_rot[1][i1] * Pow8[1];
+                                                    key += valid_rot[2][i2] * Pow8[2];
+                                                    key += valid_rot[3][i3] * Pow8[3];
+                                                    key += valid_rot[4][i4] * Pow8[4];
+                                                    key += valid_rot[5][i5] * Pow8[5];
+                                                    key += valid_rot[6][i6] * Pow8[6];
+                                                    key += valid_rot[7][i7] * Pow8[7];
+                                                    key += valid_rot[8][i8] * Pow8[8];
+                                                    key += valid_rot[9][i9] * Pow8[9];
+                                                    key += valid_rot[10][i10] * Pow8[10];
+                                                    key += valid_rot[11][i11] * Pow8[11];
+                                                    valid_states.insert(key); // 有効な状態の集合に追加
+                                                }
+                                            }
                                         }
                                     }
                                 }
